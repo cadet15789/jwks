@@ -1,0 +1,103 @@
+Here's a clear, up-to-date guide (as of 2026) on how to install **Zeek** (the powerful network traffic analysis and security monitoring tool, formerly known as Bro) on **Ubuntu** and **Windows**.
+
+### 1. Installing Zeek on Ubuntu (Recommended Method)
+
+The easiest and most reliable way is using the **official Zeek APT repository** from openSUSE Build Service. This works well on Ubuntu 22.04, 24.04, and newer versions.
+
+#### Step-by-step instructions:
+
+1. **Update your system**  
+   ```bash
+   sudo apt update && sudo apt upgrade -y
+   ```
+
+2. **Add the Zeek repository**  
+   Replace `xUbuntu_24.04` with your version (`xUbuntu_22.04` for Ubuntu 22.04).
+
+   ```bash
+   echo 'deb https://download.opensuse.org/repositories/security:/zeek/xUbuntu_24.04/ /' | sudo tee /etc/apt/sources.list.d/security:zeek.list
+   ```
+
+3. **Add the GPG signing key**  
+   ```bash
+   curl -fsSL https://download.opensuse.org/repositories/security:zeek/xUbuntu_24.04/Release.key | \
+   gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/security_zeek.gpg > /dev/null
+   ```
+
+4. **Update package list and install Zeek**  
+   - For the **LTS version** (recommended for stability):  
+     ```bash
+     sudo apt update
+     sudo apt install zeek-lts   # or zeek for the latest in some repos
+     ```
+   - For a specific release series (e.g., Zeek 7.0 or 8.x):  
+     ```bash
+     sudo apt install zeek-7.0   # replace with desired version
+     ```
+
+5. **Add Zeek to your PATH** (so you can run `zeek`, `zeekctl`, etc. easily)  
+   ```bash
+   sudo sh -c 'echo "export PATH=\$PATH:/opt/zeek/bin" >> /etc/profile.d/zeek.sh'
+   source /etc/profile.d/zeek.sh
+   ```
+
+6. **Verify the installation**  
+   ```bash
+   zeek --version
+   zeekctl version
+   ```
+
+**Alternative (if you prefer building from source):**  
+Install dependencies first (`sudo apt install cmake make gcc g++ flex bison libpcap-dev libssl-dev python3-dev swig zlib1g-dev`), download the tarball from https://zeek.org/get-zeek/, then run `./configure && make && sudo make install`.
+
+**Post-install tips:**  
+- Use `zeekctl` to manage Zeek (deploy, start, stop).  
+- Edit `/opt/zeek/etc/node.cfg` and `network.cfg` for your interface and configuration.  
+- Run `zeekctl install` and `zeekctl start` to begin monitoring.
+
+### 2. Installing Zeek on Windows
+
+**Native Windows support is experimental/limited.** Zeek does not have official easy binary installers for Windows like on Linux. Most users prefer one of these approaches:
+
+#### Recommended Option: Use **WSL2** (Windows Subsystem for Linux) — Easiest & Most Stable
+
+This runs a full Ubuntu environment inside Windows.
+
+1. **Enable and install WSL2** (run in PowerShell as Administrator):  
+   ```powershell
+   wsl --install
+   ```
+   This installs WSL + Ubuntu by default. Restart if prompted.
+
+2. **Launch Ubuntu** from the Start menu (or run `wsl` in terminal).
+
+3. **Inside the Ubuntu WSL terminal**, follow the **exact Ubuntu installation steps** above.
+
+4. **Optional but useful:** Share Windows folders with WSL (e.g., for PCAP files) using `/mnt/c/`.
+
+This method gives you full Zeek functionality with minimal hassle and is commonly used for CTFs and analysis on Windows machines.
+
+#### Alternative: Build Zeek Natively on Windows (Advanced / Experimental)
+
+- Requires **Visual Studio 2019 or later** (with C++ tools).
+- Install dependencies via **Chocolatey** (e.g., `choco install cmake ninja flex bison openssl` etc.).
+- Clone the Zeek repo and build with CMake.
+- This is not recommended for beginners — many features may be untested or buggy.
+
+**Note:** For simple PCAP analysis on Windows, many people instead use tools like **Brim** (now part of Zui) or run Zeek in Docker/WSL.
+
+### Quick Verification After Installation (on Ubuntu or WSL)
+
+```bash
+zeek --version
+# Example output: zeek version 8.x.x
+
+# Test with a sample PCAP (if you have one)
+zeek -r yourfile.pcap
+ls  # you should see log files like conn.log, http.log, etc.
+```
+
+For the most accurate and latest instructions, always check the official docs:  
+https://docs.zeek.org/en/current/install.html
+
+Would you like me to also show basic configuration for Zeek (node.cfg, monitoring an interface, or processing PCAPs for CTF)? Or help with any specific error you encounter? Good luck with your CTF! 🚩

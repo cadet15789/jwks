@@ -1,0 +1,115 @@
+**CTF Master Web Vulnerability Scanning Arsenal** 🚩  
+
+For a **given URL** in CTF (or bug bounty style), you need fast, lightweight, open-source tools that spot misconfigurations, outdated software, injection points, and common OWASP Top 10 issues. These are the **must-have tools** used by top teams in 2026 CTFs — all pre-installed or easily added in Kali Linux.
+
+### Essential Tools to Identify Vulnerabilities in a URL
+
+| Tool              | Purpose (What it Finds)                          | Why Great for CTF                          | Install/Command Example |
+|-------------------|--------------------------------------------------|--------------------------------------------|-------------------------|
+| **Nikto**        | Web server misconfigs, outdated software, dangerous files, missing headers (XSS protection, clickjacking, etc.) | Super fast initial scan, finds low-hanging fruit | `sudo apt install nikto`<br>`nikto -h https://example.com` |
+| **Nuclei**       | Template-based scanner for CVEs, RCE, SQLi, XSS, misconfigs, exposed panels, etc. (thousands of community templates) | Fastest & most accurate modern scanner; YAML templates make it extensible | `go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest`<br>`nuclei -u https://example.com` |
+| **OWASP ZAP**    | Automated + manual DAST (Dynamic Application Security Testing) — SQLi, XSS, auth issues, etc. | GUI + API, great for spidering + active scanning | `sudo apt install zaproxy`<br>Launch with `zaproxy` or use CLI |
+| **SQLMap**       | Automatic SQL Injection detection & exploitation | Best for finding & dumping databases from URLs/parameters | `sqlmap -u "https://example.com/login?id=1"` |
+| **ffuf**         | Directory, parameter, and value fuzzing | Discovers hidden endpoints & injection points | `ffuf -u https://example.com/FUZZ -w /usr/share/wordlists/dirb/common.txt` |
+| **Burp Suite** (Community) | Intercept, repeat, intruder fuzzing, scanner (limited in free version) | Manual deep testing + automation | Already in Kali — launch from menu |
+| **Nmap** (with scripts) | Service versions + vuln scripts (`--script vuln`) | Quick port + vuln combo | `nmap -sV --script vuln https://example.com` (or IP) |
+
+**Pro Workflow for Any URL in CTF** (do this order):
+1. **Recon** → `nmap -sV -p- --script http-enum <target>`
+2. **Quick server scan** → Nikto
+3. **Deep vuln scan** → Nuclei (with tags: cve, rce, sqli, xss)
+4. **Fuzz** → ffuf for directories/parameters
+5. **Injection** → SQLMap on suspicious params
+6. **Manual** → Burp/ZAP for logic flaws
+
+### Easy-to-Edit Automation Scripts (Web Vuln Focused)
+
+Save these in `~/ctf-tools/web-vuln/` and `chmod +x *.sh`
+
+#### 1. `web-vuln-quickscan.sh` (One-command starter for any URL)
+```bash
+#!/bin/bash
+# ============== EDIT THESE ==============
+URL="https://example.com"      # ← Change to your target URL
+WORDLIST="/usr/share/wordlists/dirb/common.txt"  # or SecLists
+OUTPUT_DIR="scan_results"
+# ========================================
+
+mkdir -p "$OUTPUT_DIR"
+cd "$OUTPUT_DIR"
+
+echo "[+] Starting web vulnerability scan on $URL"
+echo "[+] 1. Running Nikto (server issues)..."
+nikto -h "$URL" -output nikto.txt
+
+echo "[+] 2. Running Nuclei (CVEs & modern vulns)..."
+nuclei -u "$URL" -severity critical,high,medium -o nuclei.txt
+
+echo "[+] 3. Fuzzing directories with ffuf..."
+ffuf -u "$URL/FUZZ" -w "$WORDLIST" -mc 200,204,301,302,403 -o ffuf.json
+
+echo "[+] 4. Flag & interesting string hunt..."
+grep -E 'flag|CTF|admin|login|backup|phpinfo' *.txt 2>/dev/null || echo "No obvious flags"
+
+echo "[+] All scans done! Check $OUTPUT_DIR folder"
+```
+
+#### 2. `nuclei-enhanced.sh` (More powerful Nuclei scan — easy to customize)
+```bash
+#!/bin/bash
+# ============== EDIT THESE ==============
+URL="https://example.com"
+TAGS="cve,rce,sqli,xss,misconfig,exposed"  # add/remove tags
+# ========================================
+
+echo "[+] Running Nuclei with selected tags on $URL"
+nuclei -u "$URL" -tags "$TAGS" -severity critical,high -stats -o nuclei_detailed.txt
+
+echo "[+] Also running with all templates (slower but thorough):"
+nuclei -u "$URL" -as -o nuclei_all.txt   # -as = automatic scan
+```
+
+#### 3. `sqlmap-auto.sh` (Quick SQLi test on a URL with parameters)
+```bash
+#!/bin/bash
+# ============== EDIT THESE ==============
+URL="https://example.com/page.php?id=1"   # URL with injectable-looking param
+# ========================================
+
+echo "[+] Testing SQL Injection on $URL"
+sqlmap -u "$URL" --batch --dbs --risk=3 --level=5 --threads=10
+```
+
+#### 4. `full-web-recon.sh` (Combines everything + Burp-like spider feel with ZAP CLI)
+```bash
+#!/bin/bash
+# ============== EDIT THESE ==============
+URL="https://example.com"
+# ========================================
+
+echo "[+] Full automated web recon & vuln scan..."
+
+nikto -h "$URL" -output nikto_full.txt
+nuclei -u "$URL" -o nuclei_full.txt
+ffuf -u "$URL/FUZZ" -w /usr/share/seclists/Discovery/Web-Content/common.txt -mc 200,301,302 -o dirs.txt
+
+echo "[+] Tip: For deeper testing, open Burp Suite or ZAP and proxy your browser"
+```
+
+**Installation Tips (if missing any tool)**:
+- Nikto & SQLMap & ffuf: `sudo apt install nikto sqlmap ffuf`
+- Nuclei: `go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest` (add `~/go/bin` to PATH)
+- Update Nuclei templates: `nuclei -update-templates`
+
+**CTF Pro Tips for URL Scanning**:
+- Always check for **/.git/**, **/backup/**, **/admin/**, **phpinfo.php** with ffuf.
+- Use Nuclei with `-t cves/` for recent exploits.
+- If you find a login form → immediately try SQLMap with `--forms`.
+- Rate limiting? Add `-t 50` (threads) or use proxies.
+- When stuck: Combine with Burp Intruder for parameter fuzzing.
+
+These tools + scripts will let you scan any CTF URL in under 5–10 minutes and catch most automated points.  
+
+Drop a sample URL (or describe the challenge) and I’ll give you the exact commands to run right now.  
+
+You’re now dangerous with web vulns. Go exploit those endpoints and grab the flags! 🔥🚩
