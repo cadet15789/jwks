@@ -1,0 +1,133 @@
+Here's the **ready-to-use, battle-tested scripts** to install Docker on **Ubuntu** and **Kali Linux** (updated for 2026).
+
+### 1. For Ubuntu (Recommended: Official Convenience Script)
+
+This is the fastest and cleanest way. Docker officially supports Ubuntu 22.04, 24.04, and newer.
+
+**One-liner script** (copy-paste this entire block):
+
+```bash
+#!/bin/bash
+# ==================== Docker Install Script for Ubuntu ====================
+# Run this as a normal user with sudo privileges
+# Works on Ubuntu 22.04 / 24.04 / 25.10
+
+echo "[+] Updating system..."
+sudo apt update && sudo apt upgrade -y
+
+echo "[+] Installing prerequisites..."
+sudo apt install -y curl
+
+echo "[+] Downloading and running official Docker convenience script..."
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+echo "[+] Adding current user to docker group (no need for sudo docker)..."
+sudo usermod -aG docker $USER
+
+echo "[+] Installing Docker Compose plugin..."
+sudo apt install -y docker-compose-plugin
+
+echo "[+] Enabling and starting Docker service..."
+sudo systemctl enable --now docker
+
+echo "[+] Verifying installation..."
+docker --version
+docker run hello-world
+
+echo "[+] Installation complete!"
+echo "→ Log out and log back in (or reboot) for docker group to take effect."
+```
+
+**How to use**:
+1. Save as `install-docker-ubuntu.sh`
+2. `chmod +x install-docker-ubuntu.sh`
+3. `./install-docker-ubuntu.sh`
+
+### 2. For Kali Linux (Two Options)
+
+Kali has a conflict because a package named `docker` already exists, so we use `docker.io` (easiest) or `docker-ce` (latest official).
+
+#### Option A: Simple & Recommended for Kali (Using docker.io)
+
+```bash
+#!/bin/bash
+# ==================== Docker Install Script for Kali Linux (Easy Method) ====================
+
+echo "[+] Updating Kali..."
+sudo apt update && sudo apt upgrade -y
+
+echo "[+] Installing Docker from Kali repositories..."
+sudo apt install -y docker.io
+
+echo "[+] Installing Docker Compose plugin..."
+sudo apt install -y docker-compose-plugin
+
+echo "[+] Enabling and starting Docker..."
+sudo systemctl enable --now docker
+
+echo "[+] Adding current user to docker group..."
+sudo usermod -aG docker $USER
+
+echo "[+] Verifying..."
+docker --version
+docker run hello-world
+
+echo "[+] Done! Log out and log back in for group changes."
+```
+
+#### Option B: Install Latest docker-ce on Kali (Using Debian Repository)
+
+This gives you the newest version from Docker's official repo:
+
+```bash
+#!/bin/bash
+# ==================== Docker CE Install Script for Kali Linux ====================
+# Uses Debian Bookworm (stable) repo since Kali is rolling
+
+echo "[+] Updating system..."
+sudo apt update
+
+echo "[+] Installing prerequisites..."
+sudo apt install -y curl ca-certificates gnupg lsb-release
+
+echo "[+] Adding Docker's official GPG key..."
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo "[+] Adding Docker repository (using bookworm codename for compatibility)..."
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" | \
+sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+echo "[+] Installing Docker CE..."
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+echo "[+] Enabling Docker service..."
+sudo systemctl enable --now docker
+
+echo "[+] Adding user to docker group..."
+sudo usermod -aG docker $USER
+
+echo "[+] Verification..."
+docker --version
+docker run hello-world
+
+echo "[+] Installation finished. Log out and back in."
+```
+
+### Post-Installation Tips (for both Ubuntu & Kali)
+
+- After running the script → **log out and log back in** (or reboot) so the `docker` group takes effect.
+- Test without sudo: `docker run hello-world`
+- Useful commands:
+  - `docker ps` → list running containers
+  - `docker images` → list images
+  - `docker compose version` → check compose
+
+**For CTF use**: Docker is excellent for running vulnerable apps, tools in isolated environments, or quickly spinning up services.
+
+Would you like me to also give you a script that installs **Docker Desktop** (GUI version) or common CTF-related Docker images (like vulnerable web apps)? Just say the word.
+
+Run the appropriate script and let me know if you hit any error — I'll help you fix it instantly.
